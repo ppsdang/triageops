@@ -8,9 +8,10 @@ from app.config import settings
 from app.logging_config import setup_logging
 from app.models import ComplaintIn, TriageResponse
 from app.triage import ai_triage
+from app.web import router as web_router
 
 log = setup_logging(settings.log_level)
-app = FastAPI(title="Complaint Triage Service", version="1.2.0")
+app = FastAPI(title="Complaint Triage Service", version="1.3.0")
 
 log.info("service_starting", extra={"fields": {
     "version": app.version,
@@ -45,3 +46,4 @@ async def triage(body: ComplaintIn, response: Response) -> TriageResponse:
         "duration_ms": duration_ms,
     }})
     return result
+app.include_router(web_router)
