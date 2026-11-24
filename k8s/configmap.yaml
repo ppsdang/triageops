@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: triage-config
+  namespace: triageops
+data:
+  ENVIRONMENT: "eks"
+  LOG_LEVEL: "INFO"
+  AI_API_URL: "http://ai-stub:9000/classify"
+  AI_TIMEOUT_SECONDS: "3.0"

@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: triage
+  namespace: triageops
+spec:
+  replicas: 2
+  minReadySeconds: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: triage
+  template:
+    metadata:
+      labels:
+        app: triage
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+      containers:
+        - name: triage
+          image: REGISTRY_PLACEHOLDER/triageops:1.2.0
+          ports:
+            - containerPort: 8000
+          envFrom:
+            - configMapRef:
+                name: triage-config
+          env:
+            - name: AI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: triage-secrets
+                  key: AI_API_KEY
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8000
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: triage
+  namespace: triageops
+spec:
+  type: LoadBalancer
+  selector:
+    app: triage
+  ports:
+    - port: 80
+      targetPort: 8000

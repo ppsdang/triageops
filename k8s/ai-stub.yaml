@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-stub
+  namespace: triageops
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ai-stub
+  template:
+    metadata:
+      labels:
+        app: ai-stub
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+      containers:
+        - name: ai-stub
+          image: REGISTRY_PLACEHOLDER/triageops:1.2.0
+          command: ["uvicorn", "ai_stub.main:app", "--host", "0.0.0.0", "--port", "9000"]
+          ports:
+            - containerPort: 9000
+          env:
+            - name: STUB_DELAY
+              value: "1.0"
+            - name: STUB_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: triage-secrets
+                  key: STUB_API_KEY
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 9000
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ai-stub
+  namespace: triageops
+spec:
+  type: ClusterIP
+  selector:
+    app: ai-stub
+  ports:
+    - port: 9000
+      targetPort: 9000
